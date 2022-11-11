@@ -5,7 +5,7 @@ generator client {
   provider = "prisma-client-js"
 }
 
-generator erd{
+generator erd {
   provider = "prisma-erd-generator"
 }
 
@@ -15,8 +15,56 @@ datasource db {
 }
 
 model Pool {
-  id    String @id @default(auto()) @map("_id") @db.ObjectId
-  title String
-  code  String @unique
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  code      String   @unique
   createdAt DateTime @default(now())
+  ownerId   String?  @db.ObjectId
+
+  owner        User?         @relation(fields: [ownerId], references: [id])
+  participants Participant[]
+}
+
+model Participant {
+  id      String  @id @default(auto()) @map("_id") @db.ObjectId
+  guesses Guess[]
+  userId  String  @db.ObjectId
+  poolId  String  @db.ObjectId
+
+  user User @relation(fields: [userId], references: [id])
+  pool Pool @relation(fields: [poolId], references: [id])
+
+  @@unique([userId, poolId])
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  avatarUrl String?
+  createdAt DateTime @default(now())
+
+  participatingAt Participant[]
+  ownedPools        Pool[]
+}
+
+model Game {
+  id                    String   @id @default(auto()) @map("_id") @db.ObjectId
+  date                  DateTime
+  fistTeamCountryCode   String
+  secondTeamCountryCode String
+
+  guesses Guess[]
+}
+
+model Guess {
+  id               String   @id @default(auto()) @map("_id") @db.ObjectId
+  fistTeamPoints   Int
+  secondTeamPoints Int
+  createdAt        DateTime @default(now())
+  gameId           String   @db.ObjectId
+  participantId    String   @db.ObjectId
+
+  participant Participant @relation(fields: [participantId], references: [id])
+  game        Game        @relation(fields: [gameId], references: [id])
 }
